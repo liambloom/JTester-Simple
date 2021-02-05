@@ -44,7 +44,7 @@ public class Tester implements Closeable {
     }
 
     public Tester testOutput(Runnable lhs, String rhs) {
-        return testOutput(Integer.toString(i), lhs, rhs);
+        return testOutput("Test " + i, lhs, rhs);
     }
 
     /**
@@ -79,7 +79,7 @@ public class Tester implements Closeable {
     }
 
     protected <T> boolean runTest(String name, Supplier<T> lhs, T rhs) {
-        System.out.printf("Test %s: ", name);
+        System.out.print(name + ": ");
         
         final PrintStream out = System.out;
         final PrintStream err = System.err;
@@ -103,8 +103,8 @@ public class Tester implements Closeable {
             try {
                 final String output = stream.toString(System.getProperty("file.encoding"));
                 if (!output.isEmpty()) {
-                    System.out.println("Console output:");
-                    System.out.println(output);
+                    System.out.println("\tConsole output:");
+                    System.out.println(output.replace("\n", "\n\t"));
                 }
             }
             catch (IOException e) {

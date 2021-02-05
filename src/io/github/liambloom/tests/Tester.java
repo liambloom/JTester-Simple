@@ -1,12 +1,8 @@
 package io.github.liambloom.tests;
 
 import java.io.*;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.function.Supplier;
 import java.lang.Runnable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import org.fusesource.jansi.AnsiConsole;
 import static org.fusesource.jansi.Ansi.*;
 import static org.fusesource.jansi.Ansi.Color.*;
@@ -14,77 +10,6 @@ import static org.fusesource.jansi.Ansi.Color.*;
 public class Tester implements Closeable {
     public static enum Policy {
         RunLast, RunAll, RunUntilFailure;
-    }
-
-    private static class BoundMethod {
-        public final Method method;
-        public final Object[] args;
-
-        public BoundMethod(Method method, Object... args) {
-            this.method = method;
-            this.args = args;
-        }
-
-        public Object invoke(Object target) throws IllegalAccessException, InvocationTargetException {
-            return method.invoke(target, args);
-        }
-    }
-
-    private static class RelayStream extends OutputStream {
-        private final Queue<BoundMethod> queue = new LinkedList<>();
-
-        public void close() {
-            try { 
-                queue.add(new BoundMethod(OutputStream.class.getMethod("close"))); 
-            }
-            catch (NoSuchMethodException e) { 
-                // This should never happen
-            }
-        }
-
-        public void flush() {
-            try { 
-                queue.add(new BoundMethod(OutputStream.class.getMethod("flush"))); 
-            }
-            catch (NoSuchMethodException e) { 
-                // This should never happen
-            }
-        }
-
-        public void write(byte[] b) {
-            try {
-                queue.add(new BoundMethod(OutputStream.class.getMethod("write", byte[].class), b));
-            } catch (NoSuchMethodException e) {
-                // This should never happen
-            }
-        }
-
-        public void write(byte[] b, int off, int len) {
-            try {
-                queue.add(new BoundMethod(OutputStream.class.getMethod("write", byte[].class, int.class, int.class), b, off, len));
-            } catch (NoSuchMethodException e) {
-                // This should never happen
-            }
-        }
-
-        public void write(int b) {
-            try {
-                queue.add(new BoundMethod(OutputStream.class.getMethod("write", int.class), b));
-            } catch (NoSuchMethodException e) {
-                // This should never happen
-            }
-        }
-
-        public void relay(OutputStream target) {
-            try {
-                while (!queue.isEmpty()) {
-                    queue.remove().invoke(target);
-                }
-            }
-            catch (Exception e) {
-                // This should never happen
-            }
-        }
     }
 
     public final Policy policy;
@@ -118,11 +43,21 @@ public class Tester implements Closeable {
         return this;
     }
 
-    public <T> Tester testOutput(Runnable lhs, String rhs) {
+    public Tester testOutput(Runnable lhs, String rhs) {
         return testOutput(Integer.toString(i), lhs, rhs);
     }
 
-    public <T> Tester testOutput(String name, Runnable lhs, String rhs) {
+    /**
+     * Takes a no-argument method and checks that its console output ({@code System.out} and {@code System.err}) is correct. You do
+     * not need to worry about lined endings, as all occurences of {@code CRLF} or {@code LF} within either string will be replaced 
+     * with {@link System#lineSeparator()}.
+     * 
+     * @param name The name of the test
+     * @param lhs A function with no arguments or return
+     * @param rhs The expected console output of {@code lhs}
+     * @return itself
+     */
+    public Tester testOutput(String name, Runnable lhs, String rhs) {
         return test(name, () -> {
             final PrintStream out = System.out;
             final PrintStream err = System.err;
@@ -134,21 +69,21 @@ public class Tester implements Closeable {
             System.setErr(err);
             try {
                 System.out.write(stream.toByteArray());
-                return stream.toString(System.getProperty("file.encoding"));
+                return stream.toString(System.getProperty("file.encoding")).replaceAll("\\r?\\n", System.lineSeparator());
             }
             catch (IOException e) {
                 // OH NO!
                 return "There was an error relaying the output";
             }
-        }, rhs);
+        }, rhs.replaceAll("\\r?\\n", System.lineSeparator()));
     }
 
-    private <T> boolean runTest(String name, Supplier<T> lhs, T rhs) {
+    protected <T> boolean runTest(String name, Supplier<T> lhs, T rhs) {
         System.out.printf("Test %s: ", name);
         
         final PrintStream out = System.out;
         final PrintStream err = System.err;
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        final ByteArrayOutputStream stream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(stream));
         System.setErr(new PrintStream(stream));
 
@@ -163,8 +98,8 @@ public class Tester implements Closeable {
         }
         else {
             System.out.println(ansi().fg(RED).a("failed").reset());
-            System.out.println("\tlhs: " + lhs);
-            System.out.println("\trhs: " + rhs);
+            System.out.println("\tlhs: " + lhsOutput.toString().replaceAll("\\r?\\n", System.lineSeparator()));
+            System.out.println("\trhs: " + rhs.toString().replaceAll("\\r?\\n", System.lineSeparator()));
             try {
                 final String output = stream.toString(System.getProperty("file.encoding"));
                 if (!output.isEmpty()) {

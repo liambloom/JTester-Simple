@@ -89,19 +89,33 @@ public class Tester implements Closeable {
         System.setOut(new PrintStream(stream));
         System.setErr(new PrintStream(stream));
 
-        T lhsOutput = lhs.get();
+        T lhsOutput;
+        Throwable error = null;
+        try {
+            lhsOutput = lhs.get();
+        }
+        catch (Throwable e) {
+            lhsOutput = null;
+            e.printStackTrace();
+            error = e;
+        }
 
         System.setOut(out);
         System.setErr(err);
 
-        if (lhsOutput.equals(rhs)) {
+        if (error == null && (lhsOutput == null ? rhs == null : lhsOutput.equals(rhs))) {
             System.out.println(ansi().fg(GREEN).a("success").reset());
             return true;
         }
         else {
             System.out.println(ansi().fg(RED).a("failed").reset());
-            System.out.println("\tlhs: " + lhsOutput.toString().replaceAll("\\r?\\n", System.lineSeparator()));
-            System.out.println("\trhs: " + rhs.toString().replaceAll("\\r?\\n", System.lineSeparator()));
+            System.out.println("\tlhs: " + (error == null 
+                ? lhsOutput == null 
+                    ? "null" 
+                    : lhsOutput.toString().replaceAll("\\r?\\n", System.lineSeparator()) 
+                : error.getClass().getSimpleName()));
+            System.out.println("\trhs: " + (rhs == null ? "null": rhs.toString().replaceAll("\\r?\\n", System.lineSeparator())));
+
             try {
                 final String output = stream.toString(System.getProperty("file.encoding"));
                 if (!output.isEmpty()) {

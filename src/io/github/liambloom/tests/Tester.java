@@ -22,12 +22,14 @@ public class Tester implements Closeable {
     }
 
     public Tester(Policy policy) {
+        /* if (policy.name().startsWith("_"))
+            throw new IllegalArgumentException("You many not use an internal Policy variant (indicated by a beginning underscore)"); */
         this.policy = policy;
         AnsiConsole.systemInstall();
     }
 
     public <T> Tester test(Supplier<T> lhs, T rhs) {
-        return test(Integer.toString(i), lhs, rhs);
+        return test("Test " + i, lhs, rhs);
     }
 
     public <T> Tester test(String name, Supplier<T> lhs, T rhs) {
@@ -104,7 +106,7 @@ public class Tester implements Closeable {
                 final String output = stream.toString(System.getProperty("file.encoding"));
                 if (!output.isEmpty()) {
                     System.out.println("\tConsole output:");
-                    System.out.println(output.replace("\n", "\n\t"));
+                    System.out.println("\t\t" + output.replace("\n", "\n\t\t"));
                 }
             }
             catch (IOException e) {

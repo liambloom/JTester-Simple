@@ -46,6 +46,14 @@ public class Tester implements Closeable {
         AnsiConsole.systemInstall();
     }
 
+    public Tester testAssert(Supplier<Boolean> assertion) {
+        return testAssert(defaultName(), assertion);
+    }
+
+    public Tester testAssert(String name, Supplier<Boolean> assertion) {
+        return test(name, assertion, true);
+    }
+
     public <T> Tester test(Supplier<T> lhs, T rhs) {
         return test(defaultName(), lhs, rhs);
     }

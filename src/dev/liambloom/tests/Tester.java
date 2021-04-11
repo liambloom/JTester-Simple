@@ -1,4 +1,4 @@
-package io.github.liambloom.tests;
+package dev.liambloom.tests;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;

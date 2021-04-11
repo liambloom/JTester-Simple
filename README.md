@@ -6,7 +6,7 @@ JTester-Simple is a small java library meant for testing. Currently, it is the o
 
 ```java
 // Import the Tester class
-import io.github.liambloom.tests.Tester;
+import dev.liambloom.tests.Tester;
 
 public class MyClass {
     public static void main(String[] args) {
@@ -64,6 +64,6 @@ This code is licensed under `Apache-2.0 OR MIT` licenses, meaning that you can c
 
 ### Download
 
-Currently, there is no download. Sorry ¯\\\_(ツ)_/¯.
+Currently, there is no download. Sorry  &#175;\\\_(&#x30C4;)_/&#175;.
 
 You can still clone it or download the file, the only dependency is [Jansi](https://github.com/fusesource/jansi)
